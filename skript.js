@@ -8,7 +8,7 @@ const spiele = [
     { d: "Sa. 11.07.2026, 19:30", jsDate: "2026-07-11T19:30:00", h: "FT Forchheim",       g: "TV Mörsch",          e: "1:1", o: "1. SV Mörsch (Sportfest)" },
     { d: "So. 12.07.2026, 17:00", jsDate: "2026-07-12T17:00:00", h: "FV Spfr. Forchheim",  g: "FT Forchheim",       e: "3:0", o: "1. SV Mörsch (Sportfest)" },
     { d: "So. 12.07.2026, 18:30", jsDate: "2026-07-12T18:30:00", h: "1. SV Mörsch",       g: "SC Neuburgweier",    e: "6:1", o: "1. SV Mörsch (Sportfest)" },
-    { d: "Do. 16.07.2026, 18:00", jsDate: "2026-07-16T18:00:00", h: "TV Mörsch",          g: "SC Neuburgweier",    e: "-:-", o: "SC Neuburgweier (Jubiläum)" },
+    { d: "Do. 16.07.2026, 18:00", jsDate: "2026-07-16T18:00:00", h: "TV Mörsch",          g: "SC Neuburgweier",    e: "0:1", o: "SC Neuburgweier (Jubiläum)" },
     { d: "Do. 16.07.2026, 19:30", jsDate: "2026-07-16T19:30:00", h: "FT Forchheim",       g: "1. SV Mörsch",       e: "-:-", o: "SC Neuburgweier (Jubiläum)" }
 ];
 
