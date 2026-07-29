@@ -12,7 +12,7 @@ const standardSpiele = [
     { id: 10, d: "So. 02.08.2026, 19:30", jsDate: "2026-08-02T19:30:00", h: "FT Forchheim",       g: "1. SV Mörsch",       e: "-:-", o: "SC Neuburgweier (Jubiläum)" }
 ];
 
-const finaleJsDate = "2026-07-22T19:00:00";
+const finaleJsDate = "2026-08-03T19:00:00";
 const finaleOrt = "Spielort: SC Neuburgweier (Sportplatz)";
 
 // Prüfen, ob bereits Live-Daten vom Handy existieren, sonst Standard laden
