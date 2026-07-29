@@ -12,7 +12,7 @@ const spiele = [
     { d: "Do. 16.07.2026, 19:30", jsDate: "2026-07-16T19:30:00", h: "FT Forchheim",       g: "1. SV Mörsch",       e: "0:3", o: "SC Neuburgweier (Jubiläum)" }
 ];
 
-// HIER DAS FINALE-ERGEBNIS EINTRAGEN (z.B. "2:1")
+// HIER DAS FINALE-ERGEBNIS EINTRAGEN
 const finaleErgebnis = "1:0";
 const finaleJsDate = "2026-07-22T19:00:00";
 
@@ -51,7 +51,9 @@ function berechneAlles() {
             if (th > tg) t[s.h].p += 3; else if (th < tg) t[s.g].p += 3; else { t[s.h].p += 1; t[s.g].p += 1; }
         }
     });
-    document.getElementById("spiele-body").innerHTML = html;
+    
+    const spieleBody = document.getElementById("spiele-body");
+    if (spieleBody) spieleBody.innerHTML = html;
 
     let sortiert = Object.values(t).sort((a, b) => {
         if (b.p !== a.p) return b.p - a.p;
@@ -66,20 +68,32 @@ function berechneAlles() {
         let col = diff > 0 ? '#4caf50' : diff < 0 ? '#f44336' : '#fff';
         tabHtml += `<tr><td class="centered" style="color:#888;">${i+1}</td><td style="font-weight:bold;">${team.name}</td><td class="centered">${team.s}</td><td class="centered">${team.t}:${team.g}</td><td class="centered" style="color:${col}">${vz}${diff}</td><td class="centered" style="font-weight:bold; color:#00d2ff; font-size:1.8vh;">${team.p}</td></tr>`;
     });
-    document.getElementById("tabelle-body").innerHTML = tabHtml;
+    
+    const tabelleBody = document.getElementById("tabelle-body");
+    if (tabelleBody) tabelleBody.innerHTML = tabHtml;
 
-    if(sortiert[0]) document.getElementById("finalist-1").innerText = sortiert[0].name;
-    if(sortiert[1]) document.getElementById("finalist-2").innerText = sortiert[1].name;
+    // Finalisten sicher eintragen
+    if (sortiert && sortiert[0] && sortiert[1]) {
+        const f1 = document.getElementById("finalist-1");
+        const f2 = document.getElementById("finalist-2");
+        if (f1) f1.innerText = sortiert[0].name;
+        if (f2) f2.innerText = sortiert[1].name;
+    }
 
     let fZeit = new Date(finaleJsDate);
     let fEnde = new Date(fZeit.getTime() + (105 * 60 * 1000));
     let fRow = document.getElementById("finale-row-element");
     
-    if (finaleErgebnis === "-:-") {
-        if (jetzt >= fZeit && jetzt <= fEnde) { fRow.className = "spiel-live"; }
-        else if (finaleJsDate.startsWith(heuteString) && jetzt < fZeit) { fRow.className = "spiel-heute"; }
-        else { fRow.className = ""; }
-    } else { fRow.className = ""; }
+    if (fRow) {
+        const fErgCell = fRow.querySelector(".ergebnis");
+        if (fErgCell) fErgCell.innerText = finaleErgebnis;
+
+        if (finaleErgebnis === "-:-") {
+            if (jetzt >= fZeit && jetzt <= fEnde) { fRow.className = "spiel-live"; }
+            else if (finaleJsDate.startsWith(heuteString) && jetzt < fZeit) { fRow.className = "spiel-heute"; }
+            else { fRow.className = ""; }
+        } else { fRow.className = ""; }
+    }
 }
 
 berechneAlles();
