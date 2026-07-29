@@ -13,7 +13,7 @@ const spiele = [
 ];
 
 // HIER DAS FINALE-ERGEBNIS EINTRAGEN (z.B. "2:1")
-const finaleErgebnis = "2:1";
+const finaleErgebnis = "1:0";
 const finaleJsDate = "2026-07-22T19:00:00";
 
 function berechneAlles() {
