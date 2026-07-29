@@ -12,6 +12,9 @@ const standardSpiele = [
     { id: 10, d: "So. 02.08.2026, 19:30", jsDate: "2026-08-02T19:30:00", h: "FT Forchheim",       g: "1. SV Mörsch",       e: "-:-", o: "SC Neuburgweier (Jubiläum)" }
 ];
 
+const finaleJsDate = "2026-07-22T19:00:00";
+const finaleOrt = "Spielort: SC Neuburgweier (Sportplatz)";
+
 // Prüfen, ob bereits Live-Daten vom Handy existieren, sonst Standard laden
 if (!localStorage.getItem('turnier_spiele')) {
     localStorage.setItem('turnier_spiele', JSON.stringify(standardSpiele));
@@ -92,7 +95,7 @@ function berechneAlles() {
     
     let fErg = localStorage.getItem('finale_erg');
     if(document.getElementById("f-ergebnis")) document.getElementById("f-ergebnis").innerText = fErg;
-    if(document.getElementById("focus-ort")) document.getElementById("focus-ort").innerText = "Spielort: SC Neuburgweier (Sportplatz)";
+    if(document.getElementById("focus-ort")) document.getElementById("focus-ort").innerText = finaleOrt;
 }
 
 berechneAlles();
