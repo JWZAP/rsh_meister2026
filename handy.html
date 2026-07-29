@@ -3,38 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <title>Turnierleitung - Handy Eingabe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: sans-serif; background: #222; color: #fff; padding: 20px; font-size: 18px; }
-        .pass-box { text-align: center; margin-top: 50px; }
-        input { font-size: 20px; padding: 10px; width: 80%; text-align: center; border-radius: 8px; margin-bottom: 15px; }
-        button { font-size: 20px; padding: 12px 25px; background: #00d2ff; border: none; border-radius: 8px; font-weight: bold; width: 85%; }
-        .spiel-edit { background: #333; padding: 15px; margin-bottom: 15px; border-radius: 10px; border-left: 5px solid #00d2ff; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; color: #aaa; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: sans-serif; background: #121212; color: #fff; padding: 15px; font-size: 16px; }
+        .pass-box { text-align: center; margin-top: 50px; padding: 20px; background: #1e1e1e; border-radius: 12px; border: 1px solid #333; }
+        h2 { margin-bottom: 15px; color: #00d2ff; }
+        input { font-size: 18px; padding: 12px; width: 100%; text-align: center; border-radius: 8px; border: 1px solid #444; background: #000; color: #fff; margin-bottom: 15px; }
+        button { font-size: 18px; padding: 12px; background: #00d2ff; color: #000; border: none; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; transition: background 0.2s; }
+        button:active { background: #0099b8; }
+        .spiel-edit { background: #1e1e1e; padding: 15px; margin-bottom: 15px; border-radius: 10px; border-left: 6px solid #00d2ff; border: 1px solid #333; border-left: 6px solid #00d2ff; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #aaa; font-size: 14px; }
+        .paarung { font-size: 18px; font-weight: bold; display: block; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
+    <!-- LOGIN BEREICH -->
     <div id="login" class="pass-box">
-        <h2>Passwort für Turnierleitung:</h2>
-        <input type="password" id="pw" placeholder="Passwort eingeben..."><br>
+        <h2>Turnierleitung Login</h2>
+        <input type="password" id="pw" placeholder="Passwort eingeben...">
         <button onclick="login()">Einloggen</button>
     </div>
 
+    <!-- ADMIN BEREICH -->
     <div id="admin-bereich" style="display:none;">
-        <h2>Ergebnis-Eingabe (Handy)</h2>
-        <p style="color: #4caf50; font-size: 14px; margin-bottom: 20px;">Geänderte Tore werden sofort auf den Kiosk-Monitor übertragen!</p>
+        <h2 style="margin-bottom: 5px;">Ergebnisdienst</h2>
+        <p style="color: #4caf50; font-size: 14px; margin-bottom: 20px;">Änderungen werden sofort live auf den Monitor übertragen!</p>
         
+        <!-- Liste der Vorrundenspiele -->
         <div id="liste-fuer-handy"></div>
         
-        <div class="spiel-edit" style="border-color: #ff4d4d;">
+        <!-- Separates Finale-Eingabefeld -->
+        <div class="spiel-edit" style="border-left-color: #ff4d4d; background: #1a0a0a;">
             <label>🏆 GROSSES FINALE</label>
-            <input type="text" id="final-input" placeholder="z.B. 2:1">
-            <button onclick="speichereFinale()" style="background: #ff4d4d; color: #fff;">Finale Speichern</button>
+            <span class="paarung">Endspiel</span>
+            <input type="text" id="final-input" placeholder="-:-">
+            <button onclick="speichereFinale()" style="background: #ff4d4d; color: #fff;">Finalergebnis Sichern</button>
         </div>
     </div>
 
     <script>
-        // Das Passwort lautet standardmäßig: rheinstetten
+        // Das Passwort lautet: rheinstetten
         function login() {
             if(document.getElementById("pw").value === "rheinstetten") {
                 document.getElementById("login").style.display = "none";
@@ -46,33 +56,33 @@
         function baueHandyListe() {
             let spiele = JSON.parse(localStorage.getItem('turnier_spiele'));
             let html = "";
-            spiele.forEach((s, idx) => {
+            spiele.forEach((s) => {
                 html += `<div class="spiel-edit">
-                    <label>${s.d} (${s.o})</label>
-                    <span style="font-weight:bold;">${s.h} vs. ${s.g}</span><br><br>
+                    <label>${s.d} | Ort: ${s.o}</label>
+                    <span class="paarung">${s.h} vs. ${s.g}</span>
                     <input type="text" id="inp-${s.id}" value="${s.e}" placeholder="-:-">
                     <button onclick="sichern(${s.id})">Ergebnis Sichern</button>
                 </div>`;
             });
             document.getElementById("liste-fuer-handy").innerHTML = html;
-            document.getElementById("final-input").value = localStorage.getItem('finale_erg');
+            document.getElementById("final-input").value = localStorage.getItem('finale_erg') || "-:-";
         }
 
         function sichern(id) {
             let spiele = JSON.parse(localStorage.getItem('turnier_spiele'));
-            let val = document.getElementById("inp-"+id).value;
+            let val = document.getElementById("inp-"+id).value.trim();
             let sp = spiele.find(x => x.id === id);
             if(sp) {
                 sp.e = val;
                 localStorage.setItem('turnier_spiele', JSON.stringify(spiele));
-                alert("Ergebnis für " + sp.h + " aktualisiert!");
+                alert("Spiel " + sp.h + " - " + sp.g + " gespeichert!");
             }
         }
 
         function speichereFinale() {
-            let val = document.getElementById("final-input").value;
+            let val = document.getElementById("final-input").value.trim();
             localStorage.setItem('finale_erg', val);
-            alert("Finale gespeichert!");
+            alert("Finalergebnis gespeichert!");
         }
     </script>
 </body>
