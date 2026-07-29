@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Turnierleitung - Handy Eingabe</title>
+    <style>
+        body { font-family: sans-serif; background: #222; color: #fff; padding: 20px; font-size: 18px; }
+        .pass-box { text-align: center; margin-top: 50px; }
+        input { font-size: 20px; padding: 10px; width: 80%; text-align: center; border-radius: 8px; margin-bottom: 15px; }
+        button { font-size: 20px; padding: 12px 25px; background: #00d2ff; border: none; border-radius: 8px; font-weight: bold; width: 85%; }
+        .spiel-edit { background: #333; padding: 15px; margin-bottom: 15px; border-radius: 10px; border-left: 5px solid #00d2ff; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #aaa; }
+    </style>
+</head>
+<body>
+
+    <div id="login" class="pass-box">
+        <h2>Passwort für Turnierleitung:</h2>
+        <input type="password" id="pw" placeholder="Passwort eingeben..."><br>
+        <button onclick="login()">Einloggen</button>
+    </div>
+
+    <div id="admin-bereich" style="display:none;">
+        <h2>Ergebnis-Eingabe (Handy)</h2>
+        <p style="color: #4caf50; font-size: 14px; margin-bottom: 20px;">Geänderte Tore werden sofort auf den Kiosk-Monitor übertragen!</p>
+        
+        <div id="liste-fuer-handy"></div>
+        
+        <div class="spiel-edit" style="border-color: #ff4d4d;">
+            <label>🏆 GROSSES FINALE</label>
+            <input type="text" id="final-input" placeholder="z.B. 2:1">
+            <button onclick="speichereFinale()" style="background: #ff4d4d; color: #fff;">Finale Speichern</button>
+        </div>
+    </div>
+
+    <script>
+        // Das Passwort lautet standardmäßig: rheinstetten
+        function login() {
+            if(document.getElementById("pw").value === "rheinstetten") {
+                document.getElementById("login").style.display = "none";
+                document.getElementById("admin-bereich").style.display = "block";
+                baueHandyListe();
+            } else { alert("Falsches Passwort!"); }
+        }
+
+        function baueHandyListe() {
+            let spiele = JSON.parse(localStorage.getItem('turnier_spiele'));
+            let html = "";
+            spiele.forEach((s, idx) => {
+                html += `<div class="spiel-edit">
+                    <label>${s.d} (${s.o})</label>
+                    <span style="font-weight:bold;">${s.h} vs. ${s.g}</span><br><br>
+                    <input type="text" id="inp-${s.id}" value="${s.e}" placeholder="-:-">
+                    <button onclick="sichern(${s.id})">Ergebnis Sichern</button>
+                </div>`;
+            });
+            document.getElementById("liste-fuer-handy").innerHTML = html;
+            document.getElementById("final-input").value = localStorage.getItem('finale_erg');
+        }
+
+        function sichern(id) {
+            let spiele = JSON.parse(localStorage.getItem('turnier_spiele'));
+            let val = document.getElementById("inp-"+id).value;
+            let sp = spiele.find(x => x.id === id);
+            if(sp) {
+                sp.e = val;
+                localStorage.setItem('turnier_spiele', JSON.stringify(spiele));
+                alert("Ergebnis für " + sp.h + " aktualisiert!");
+            }
+        }
+
+        function speichereFinale() {
+            let val = document.getElementById("final-input").value;
+            localStorage.setItem('finale_erg', val);
+            alert("Finale gespeichert!");
+        }
+    </script>
+</body>
+</html>
