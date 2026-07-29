@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Dashboard - Rheinstettener Meisterschaften 2026</title>
+    <title>Kiosk Großbild-Dashboard</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -11,155 +11,114 @@
             background-color: #000000;
             color: #ffffff;
             height: 100vh;
-            overflow: hidden; /* Verhindert jegliches Scrollen */
-            padding: 1.5vh;
+            overflow: hidden;
+            padding: 3vh 3vw;
             display: flex;
             flex-direction: column;
-            gap: 2vh; /* Abstand zwischen Header, Dashboard und Finale */
-        }
-        h1 {
-            text-align: center;
-            color: #00d2ff;
-            font-size: 3.5vh;
-            padding-bottom: 1vh;
-            border-bottom: 2px solid #00d2ff;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        h2 { color: #00d2ff; font-size: 2.2vh; margin-bottom: 1vh; text-transform: uppercase; }
-        
-        /* Dashboard-Mitte: Spalten nebeneinander */
-        .dashboard-mid { 
-            display: flex; 
-            gap: 2vw; 
-            flex: 1; 
-            height: 60vh; /* Platzhalter für den oberen Teil */
-        }
-        .col-left { width: 42%; display: flex; flex-direction: column; gap: 2vh; }
-        .col-right { width: 58%; display: flex; flex-direction: column; gap: 2vh; }
-        
-        .card { background-color: #111111; border: 1px solid #222; border-radius: 8px; padding: 1.5vh; }
-        .flex-fill { flex: 1; overflow: hidden; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 1.55vh; }
-        th, td { padding: 0.7vh 1vw; text-align: left; border-bottom: 1px solid #222; }
-        th { color: #aaaaaa; text-transform: uppercase; font-size: 1.3vh; border-bottom: 2px solid #333; }
-        .tabelle-table th { color: #4caf50; }
-        
-        /* Finale Segment - Jetzt über die volle Breite unten */
-        .finale-card { 
-            border: 1px solid #ff4d4d; 
-            background-color: #160707;
-            height: 15vh; /* Feste Höhe für die untere Zeile */
-        }
-        .finale-table th { background-color: #b32424; color: #fff; }
-        .finale-teams { font-size: 2vh; font-weight: bold; color: #ff4d4d; }
-        
-        /* Live- und Heute-Effekte */
-        .spiel-heute { background-color: #001f3f !important; border-left: 4px solid #00d2ff; }
-        .badge-heute {
-            background-color: #00d2ff; color: #000; font-weight: bold;
-            padding: 2px 6px; border-radius: 4px; font-size: 1.1vh;
-            margin-left: 8px; display: inline-block; text-transform: uppercase;
-        }
-        .spiel-live { border: 2px solid #ff3333 !important; animation: livePulsieren 1.5s infinite ease-in-out; }
-        .badge-live {
-            background-color: #ff3333; color: #fff; font-weight: bold;
-            padding: 2px 6px; border-radius: 4px; font-size: 1.1vh;
-            margin-left: 8px; display: inline-block; text-transform: uppercase;
-        }
-        @keyframes livePulsieren {
-            0% { background-color: #1a0000; }
-            50% { background-color: #4a0000; }
-            100% { background-color: #1a0000; }
         }
         
-        .ergebnis { font-weight: bold; text-align: center; color: #ffb703; }
+        /* OBERE ZEITEILE (Immer sichtbar) */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #00d2ff;
+            padding-bottom: 1.5vh;
+            margin-bottom: 3vh;
+        }
+        .header h1 { font-size: 4.5vh; text-transform: uppercase; color: #ffffff; letter-spacing: 2px; }
+        .slide-title { font-size: 3.5vh; color: #00d2ff; font-weight: bold; text-transform: uppercase; }
+
+        /* SLIDE CONTAINER STEUERUNG */
+        .slide { display: none; flex: 1; flex-direction: column; justify-content: center; }
+        .slide.active { display: flex; }
+
+        /* RIESEN-TABELLE (Seite 1) */
+        .big-table { width: 100%; border-collapse: collapse; font-size: 3.8vh; }
+        .big-table th { font-size: 2.8vh; color: #aaaaaa; text-transform: uppercase; padding: 1.5vh 1vw; border-bottom: 4px solid #333; }
+        .big-table td { padding: 2vh 1vw; border-bottom: 2px solid #222; }
+        .big-table tr:nth-child(1) td { color: #ffd700; font-weight: bold; } /* Platz 1 Gold */
+        .big-table tr:nth-child(2) td { color: #c0c0c0; font-weight: bold; } /* Platz 2 Silber */
         .centered { text-align: center; }
-        .teams-list ul { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5vh; list-style: none; font-size: 1.4vh; }
-        .teams-list li { background: #1a1a1a; padding: 0.5vh 1vw; border-left: 3px solid #00d2ff; border-radius: 2px; text-align: center; }
+
+        /* HIGHLIGHT SPIELPLAN (Seite 2) */
+        .spiel-row { background: #111; margin-bottom: 2vh; padding: 2.5vh; border-radius: 12px; border-left: 10px solid #555; display: flex; align-items: center; font-size: 3.5vh; }
+        .spiel-row.heute { border-left-color: #00d2ff; background: #00152b; }
+        .spiel-row.live { border-left-color: #ff3333; background: #2b0000; animation: pulsieren 1.5s infinite ease-in-out; }
+        .spiel-zeit { width: 25%; font-size: 2.5vh; color: #888; }
+        .spiel-heute .spiel-zeit { color: #00d2ff; font-weight: bold; }
+        .spiel-paarung { width: 45%; font-weight: bold; }
+        .spiel-erg { width: 10%; text-align: center; font-weight: bold; color: #ffb703; font-size: 4.5vh; }
+        .spiel-ort { width: 20%; font-size: 2.3vh; color: #aaa; text-align: right; font-style: italic; }
+
+        /* FINALE / LIVE FOCUS (Seite 3) */
+        .focus-box { background: #160707; border: 4px solid #ff4d4d; border-radius: 20px; padding: 5vh; text-align: center; }
+        .focus-title { font-size: 4vh; color: #ff4d4d; text-transform: uppercase; margin-bottom: 2vh; letter-spacing: 3px; }
+        .focus-teams { font-size: 6.5vh; font-weight: bold; margin: 3vh 0; letter-spacing: 1px; color: #ffffff; }
+        .focus-score { font-size: 12vh; font-weight: bold; color: #ffb703; font-family: monospace; background: #000; display: inline-block; padding: 1vh 5vw; border-radius: 15px; border: 2px solid #333; }
+        .focus-info { font-size: 3vh; color: #888; margin-top: 3vh; }
+
+        /* Animationen */
+        @keyframes pulsieren { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
     </style>
 </head>
 <body>
 
-    <h1>Rheinstettener Meisterschaften 2026</h1>
-
-    <!-- OBERER BEREICH: Teams und Spielplan nebeneinander -->
-    <div class="dashboard-mid">
-        <div class="col-left">
-            <div class="card teams-list">
-                <h2>Teilnehmende Teams</h2>
-                <ul>
-                    <li>1. SV Mörsch</li>
-                    <li>TV Mörsch</li>
-                    <li>FV Spfr. Forchheim</li>
-                    <li>FT Forchheim</li>
-                    <li>SC Neuburgweier</li>
-                </ul>
-            </div>
-
-            <div class="card flex-fill">
-                <h2>Aktuelle Tabelle (Vorrunde)</h2>
-                <table class="tabelle-table">
-                    <thead>
-                        <tr>
-                            <th class="centered">Pl.</th>
-                            <th>Mannschaft</th>
-                            <th class="centered">Sp.</th>
-                            <th class="centered">Tore</th>
-                            <th class="centered">Diff.</th>
-                            <th class="centered">Punkte</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelle-body"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="col-right">
-            <div class="card flex-fill">
-                <h2>Spielplan & Ergebnisse (Vorrunde)</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Datum / Uhrzeit</th>
-                            <th>Heim</th>
-                            <th>Gast</th>
-                            <th class="centered">Erg.</th>
-                            <th>Spielort / Info</th>
-                        </tr>
-                    </thead>
-                    <tbody id="spiele-body"></tbody>
-                </table>
-            </div>
-        </div>
+    <div class="header">
+        <h1>Rheinstettener Meisterschaften</h1>
+        <div class="slide-title" id="slide-name">Tabelle</div>
     </div>
 
-    <!-- UNTERER BEREICH: Das Finale über die komplette Breite -->
-    <div class="card finale-card">
-        <h2>Finale</h2>
-        <table class="finale-table">
+    <!-- SEITE 1: DIE AKTUELLE BLITZTABELLE -->
+    <div class="slide active" id="slide-tabelle">
+        <table class="big-table">
             <thead>
                 <tr>
-                    <th>Datum / Uhrzeit</th>
-                    <th>Heim</th>
-                    <th>Gast</th>
-                    <th class="centered">Erg.</th>
-                    <th>Spielort</th>
+                    <th class="centered">Pl.</th>
+                    <th>Mannschaft</th>
+                    <th class="centered">Sp.</th>
+                    <th class="centered">Tore</th>
+                    <th class="centered">Diff.</th>
+                    <th class="centered">Punkte</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr id="finale-row-element">
-                    <td>Mi. 22.07.2026, 19:00</td>
-                    <td class="finale-teams" id="finalist-1">1. Gruppe</td>
-                    <td class="finale-teams" id="finalist-2">2. Gruppe</td>
-                    <td class="ergebnis" style="font-size: 2vh;">-:-</td>
-                    <td style="font-size: 1.4vh; color: #aaa;">SC Neuburgweier (Sportplatz)</td>
-                </tr>
-            </tbody>
+            <tbody id="tabelle-body"></tbody>
         </table>
     </div>
 
-    <script src="skript.js"></script>
+    <!-- SEITE 2: SPIELPLAN MIT HIGHLIGHTS -->
+    <div class="slide" id="slide-spielplan">
+        <div id="spiele-body"></div>
+    </div>
+
+    <!-- SEITE 3: GROSSES FINALE / LIVE FOCUS -->
+    <div class="slide" id="slide-finale">
+        <div class="focus-box">
+            <div class="focus-title" id="focus-header">Großes Finale</div>
+            <div class="focus-teams"><span id="f-team1">Heim</span> vs. <span id="f-team2">Gast</span></div>
+            <div><span class="focus-score" id="f-ergebnis">-:-</span></div>
+            <div class="focus-info" id="focus-ort">Spielort wird geladen...</div>
+        </div>
+    </div>
+
+    <script>
+        // Verhindert Cache-Probleme beim Laden des Skripts
+        const script = document.createElement('script');
+        script.src = 'skript.js?v=' + new Date().getTime();
+        document.head.appendChild(script);
+
+        // ZYKLISCHER SEITENWECHSEL (Alle 12 Sekunden)
+        let aktuelleSeite = 0;
+        const slides = ["slide-tabelle", "slide-spielplan", "slide-finale"];
+        const titel = ["Aktuelle Blitztabelle", "Spielplan & Highlights", "Match Fokus"];
+
+        function wechsleSeite() {
+            document.getElementById(slides[aktuelleSeite]).classList.remove("active");
+            aktuelleSeite = (aktuelleSeite + 1) % slides.length;
+            document.getElementById(slides[aktuelleSeite]).classList.add("active");
+            document.getElementById("slide-name").innerText = titel[aktuelleSeite];
+        }
+        setInterval(wechsleSeite, 12000); // 12000 Millisekunden = 12 Sekunden
+    </script>
 </body>
 </html>
