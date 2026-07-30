@@ -2,49 +2,47 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Turnierleitung - Handy Eingabe</title>
+    <title>Turnierleitung Live-Eingabe</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://jsdelivr.net"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: sans-serif; background: #121212; color: #fff; padding: 15px; font-size: 16px; }
-        .pass-box { text-align: center; margin-top: 50px; padding: 20px; background: #1e1e1e; border-radius: 12px; border: 1px solid #333; }
-        h2 { margin-bottom: 15px; color: #00d2ff; }
+        body { font-family: sans-serif; background: #121212; color: #fff; padding: 15px; }
+        .pass-box { text-align: center; margin-top: 50px; padding: 20px; background: #1e1e1e; border-radius: 12px; }
         input { font-size: 18px; padding: 12px; width: 100%; text-align: center; border-radius: 8px; border: 1px solid #444; background: #000; color: #fff; margin-bottom: 15px; }
-        button { font-size: 18px; padding: 12px; background: #00d2ff; color: #000; border: none; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; transition: background 0.2s; }
-        button:active { background: #0099b8; }
-        .spiel-edit { background: #1e1e1e; padding: 15px; margin-bottom: 15px; border-radius: 10px; border-left: 6px solid #00d2ff; border: 1px solid #333; border-left: 6px solid #00d2ff; }
+        button { font-size: 18px; padding: 12px; background: #00d2ff; color: #000; border: none; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; }
+        .spiel-edit { background: #1e1e1e; padding: 15px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #333; border-left: 6px solid #00d2ff; }
         label { display: block; font-weight: bold; margin-bottom: 8px; color: #aaa; font-size: 14px; }
         .paarung { font-size: 18px; font-weight: bold; display: block; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-    <!-- LOGIN BEREICH -->
     <div id="login" class="pass-box">
         <h2>Turnierleitung Login</h2>
         <input type="password" id="pw" placeholder="Passwort eingeben...">
         <button onclick="login()">Einloggen</button>
     </div>
 
-    <!-- ADMIN BEREICH -->
     <div id="admin-bereich" style="display:none;">
-        <h2 style="margin-bottom: 5px;">Ergebnisdienst</h2>
-        <p style="color: #4caf50; font-size: 14px; margin-bottom: 20px;">Änderungen werden sofort live auf den Monitor übertragen!</p>
+        <h2>Echtzeit Ergebnisdienst</h2>
+        <p style="color: #4caf50; font-size: 14px; margin-bottom: 20px;">Supabase-Cloud: Übertragung dauert unter 1 Sekunde!</p>
         
-        <!-- Liste der Vorrundenspiele -->
         <div id="liste-fuer-handy"></div>
         
-        <!-- Separates Finale-Eingabefeld -->
-        <div class="spiel-edit" style="border-left-color: #ff4d4d; background: #1a0a0a;">
-            <label>🏆 GROSSES FINALE</label>
-            <span class="paarung">Endspiel</span>
-            <input type="text" id="final-input" placeholder="-:-">
-            <button onclick="speichereFinale()" style="background: #ff4d4d; color: #fff;">Finalergebnis Sichern</button>
+        <div class="spiel-edit" style="border-left-color: #ff4d4d; background: #1a0a0a;" id="finale-bereich">
+            <!-- Wird dynamisch geladen -->
         </div>
     </div>
 
     <script>
-        // Das Passwort lautet: rheinstetten
+        // const SUPABASE_URL = "HIER_DEINE_PROJECT_URL_EINTRAGEN";
+        // const SUPABASE_ANON_KEY = "HIER_DEINEN_ANON_PUBLIC_KEY_EINTRAGEN";
+        const SUPABASE_URL = "https://tadjszlduhykeioytrjx.supabase.co/rest/v1/";
+        const SUPABASE_ANON_KEY = "sb_publishable_L0AXltB1SOd1yVmwY5CHUA_mbllMFBI";
+
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         function login() {
             if(document.getElementById("pw").value === "rheinstetten") {
                 document.getElementById("login").style.display = "none";
@@ -53,36 +51,39 @@
             } else { alert("Falsches Passwort!"); }
         }
 
-        function baueHandyListe() {
-            let spiele = JSON.parse(localStorage.getItem('turnier_spiele'));
+        async function baueHandyListe() {
+            let { data: spiele } = await _supabase.from('spiele').select('*').order('id', { ascending: true });
+            let { data: finale } = await _supabase.from('finale').select('*').single();
+
             let html = "";
             spiele.forEach((s) => {
                 html += `<div class="spiel-edit">
-                    <label>${s.d} | Ort: ${s.o}</label>
-                    <span class="paarung">${s.h} vs. ${s.g}</span>
-                    <input type="text" id="inp-${s.id}" value="${s.e}" placeholder="-:-">
-                    <button onclick="sichern(${s.id})">Ergebnis Sichern</button>
+                    <label>${s.datum} | ${s.spielort}</label>
+                    <span class="paarung">${s.heim} vs. ${s.gast}</span>
+                    <input type="text" id="inp-${s.id}" value="${s.ergebnis}">
+                    <button onclick="sichern(${s.id})">Speichern</button>
                 </div>`;
             });
             document.getElementById("liste-fuer-handy").innerHTML = html;
-            document.getElementById("final-input").value = localStorage.getItem('finale_erg') || "-:-";
+
+            document.getElementById("finale-bereich").innerHTML = `
+                <label>🏆 GROSSES FINALE (${finale.datum})</label>
+                <span class="paarung">Endspiel</span>
+                <input type="text" id="final-input" value="${finale.ergebnis}">
+                <button onclick="speichereFinale()" style="background: #ff4d4d; color: #fff;">Finale sichern</button>
+            `;
         }
 
-        function sichern(id) {
-            let spiele = JSON.parse(localStorage.getItem('turnier_spiele'));
+        async function sichern(id) {
             let val = document.getElementById("inp-"+id).value.trim();
-            let sp = spiele.find(x => x.id === id);
-            if(sp) {
-                sp.e = val;
-                localStorage.setItem('turnier_spiele', JSON.stringify(spiele));
-                alert("Spiel " + sp.h + " - " + sp.g + " gespeichert!");
-            }
+            await _supabase.from('spiele').update({ ergebnis: val }).eq('id', id);
+            alert("Ergebnis live in Cloud gespeichert!");
         }
 
-        function speichereFinale() {
+        async function speichereFinale() {
             let val = document.getElementById("final-input").value.trim();
-            localStorage.setItem('finale_erg', val);
-            alert("Finalergebnis gespeichert!");
+            await _supabase.from('finale').update({ ergebnis: val }).eq('id', 1);
+            alert("Finalergebnis live in Cloud gespeichert!");
         }
     </script>
 </body>
