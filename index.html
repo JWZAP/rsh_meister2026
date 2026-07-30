@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kiosk Großbild-Dashboard</title>
+    <title>Live Kiosk Dashboard (Supabase Echtzeit)</title>
+    <!-- Lädt die offizielle Supabase Live-Schnittstelle -->
+    <script src="https://jsdelivr.net"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -11,12 +13,11 @@
             background-color: #000000;
             color: #ffffff;
             height: 100vh;
-            overflow: hidden; /* Verhindert Scrollen */
+            overflow: hidden;
             padding: 3vh 3vw;
             display: flex;
             flex-direction: column;
         }
-        
         .header {
             display: flex;
             justify-content: space-between;
@@ -63,39 +64,138 @@
 
     <div class="header">
         <h1>Rheinstettener Meisterschaften</h1>
-        <div class="slide-title" id="slide-name">Turnierdaten werden geladen...</div>
+        <div class="slide-title" id="slide-name">Verbindung zur Live-Datenbank...</div>
     </div>
 
-    <!-- Dynamischer Bereich, der per JS befüllt wird -->
     <div id="slides-container"></div>
 
     <script>
-        // Verhindert Cache-Probleme beim Laden des Skripts
-        const script = document.createElement('script');
-        script.src = 'skript.js?v=' + new Date().getTime();
-        document.head.appendChild(script);
+        // =========================================================================
+        // 🔑 HIER DEINE BEIDEN CODES VON SUPABASE EINTRAGEN
+        // =========================================================================
+        const SUPABASE_URL = "HIER_DEINE_PROJECT_URL_EINTRAGEN";
+        const SUPABASE_ANON_KEY = "HIER_DEINEN_ANON_PUBLIC_KEY_EINTRAGEN";
+        
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let aktuelleSeite = 0;
         let slideIds = [];
         let slideTitel = [];
 
-        function initialisiereWechsel(ids, titel) {
-            slideIds = ids;
-            slideTitel = titel;
-            if(slideIds.length > 0) {
-                document.getElementById(slideIds[0]).classList.add("active");
-                document.getElementById("slide-name").innerText = slideTitel[0];
-                setInterval(wechsleSeite, 12000); // Alle 12 Sekunden umblättern
-            }
-        }
+        async function ladeUndBerechneDaten() {
+            const jetzt = new Date();
+            const heuteString = jetzt.getFullYear() + "-" + String(jetzt.getMonth()+1).padStart(2,'0') + "-" + String(jetzt.getDate()).padStart(2,'0');
+            const teams = ["TV Mörsch", "1. SV Mörsch", "FV Spfr. Forchheim", "SC Neuburgweier", "FT Forchheim"];
+            
+            let t = {};
+            teams.forEach(name => { t[name] = { name: name, s: 0, t: 0, g: 0, p: 0 }; });
 
-        function wechsleSeite() {
-            if (slideIds.length === 0) return;
-            document.getElementById(slideIds[aktuelleSeite]).classList.remove("active");
-            aktuelleSeite = (aktuelleSeite + 1) % slideIds.length;
+            // 1. Daten direkt live aus der Cloud ziehen (Umgang jeglichen Browser-Caches)
+            let { data: spiele } = await _supabase.from('spiele').select('*').order('id', { ascending: true });
+            let { data: finale } = await _supabase.from('finale').select('*').single();
+
+            if (!spiele || !finale) return;
+
+            let vorrundeAbgeschlossen = true;
+            let alleSpieleHtmls = [];
+
+            spiele.forEach(s => {
+                if (s.ergebnis === "-:-") vorrundeAbgeschlossen = false;
+
+                let spielZeit = new Date(s.js_date);
+                let spielEnde = new Date(spielZeit.getTime() + (105 * 60 * 1000));
+                let istGleicherTag = s.js_date.startsWith(heuteString);
+                let statusKlasse = "spiel-row", badgeHtml = "";
+
+                if (s.ergebnis === "-:-") {
+                    if (jetzt >= spielZeit && jetzt <= spielEnde) { statusKlasse += " live"; badgeHtml = ' <span class="badge-live">LIVE</span>'; }
+                    else if (istGleicherTag && jetzt < spielZeit) { statusKlasse += " heute"; badgeHtml = ' <span class="badge-heute">Heute</span>'; }
+                }
+
+                let sHtml = `<div class="${statusKlasse}">
+                    <div class="spiel-zeit">${s.datum}${badgeHtml}</div>
+                    <div class="spiel-paarung">${s.heim} - ${s.gast}</div>
+                    <div class="spiel-erg">${s.ergebnis}</div>
+                    <div class="spiel-ort">${s.spielort}</div>
+                </div>`;
+                alleSpieleHtmls.push(sHtml);
+
+                let m = s.ergebnis.match(/^(\d+):(\d+)$/);
+                if (m && t[s.heim] && t[s.gast]) {
+                    let th = parseInt(m, 10), tg = parseInt(m, 10);
+                    t[s.heim].s++; t[s.heim].t += th; t[s.heim].g += tg;
+                    t[s.gast].s++; t[s.gast].t += tg; t[s.gast].g += th;
+                    if (th > tg) t[s.heim].p += 3; else if (th < tg) t[s.gast].p += 3; else { t[s.heim].p += 1; t[s.gast].p += 1; }
+                }
+            });
+
+            let sortiert = Object.values(t).sort((a, b) => {
+                if (b.p !== a.p) return b.p - a.p;
+                if ((b.t - b.g) !== (a.t - a.g)) return (b.t - b.g) - (a.t - a.g);
+                return b.t - a.t;
+            });
+
+            // HTML Generierung
+            let container = document.getElementById("slides-container");
+            container.innerHTML = "";
+            slideIds = []; slideTitel = [];
+
+            // SLIDE 1: TABELLE
+            let tabHtml = `<div class="slide" id="slide-tabelle"><table class="big-table"><thead><tr><th class="centered">Pl.</th><th>Mannschaft</th><th class="centered">Sp.</th><th class="centered">Tore</th><th class="centered">Diff.</th><th class="centered">Punkte</th></tr></thead><tbody>`;
+            sortiert.forEach((team, i) => {
+                let diff = team.t - team.g;
+                let vz = diff > 0 ? "+" : "";
+                let col = diff > 0 ? '#4caf50' : diff < 0 ? '#f44336' : '#fff';
+                tabHtml += `<tr><td class="centered" style="color:#888;">${i+1}</td><td style="font-weight:bold;">${team.name}</td><td class="centered">${team.s}</td><td class="centered">${team.t}:${team.g}</td><td class="centered" style="color:${col}">${vz}${diff}</td><td class="centered" style="font-weight:bold; color:#00d2ff;">${team.p}</td></tr>`;
+            });
+            tabHtml += `</tbody></table></div>`;
+            container.innerHTML += tabHtml;
+            slideIds.push("slide-tabelle"); slideTitel.push("Aktuelle Blitztabelle");
+
+            // SLIDE 2: SPIELPLANE
+            const spieleProSeite = 5;
+            let seitenAnzahl = Math.ceil(alleSpieleHtmls.length / spieleProSeite);
+            for(let i=0; i<seitenAnzahl; i++) {
+                let id = `slide-spielplan-${i}`;
+                let slice = alleSpieleHtmls.slice(i * spieleProSeite, (i + 1) * spieleProSeite);
+                container.innerHTML += `<div class="slide" id="${id}">${slice.join("")}</div>`;
+                slideIds.push(id); slideTitel.push(`Spielplan (Seite ${i+1}/${seitenAnzahl})`);
+            }
+
+            // SLIDE 3: FINALE
+            let erster = vorrundeAbgeschlossen ? sortiert.name : "Qualifikation läuft...";
+            let zweiter = vorrundeAbgeschlossen ? sortiert.name : "Qualifikation läuft...";
+            let fZeit = new Date(finale.js_date || "2026-07-22T19:00:00");
+            let fEnde = new Date(fZeit.getTime() + (105 * 60 * 1000));
+            let fKlasse = "focus-box";
+            if (finale.ergebnis === "-:-" && jetzt >= fZeit && jetzt <= fEnde) fKlasse += " live";
+
+            container.innerHTML += `<div class="slide" id="slide-finale">
+                <div class="${fKlasse}">
+                    <div class="focus-title">Großes Finale</div>
+                    <div class="focus-teams" style="color: ${vorrundeAbgeschlossen ? '#ff4d4d' : '#888'}">${erster} vs. ${zweiter}</div>
+                    <div><span class="focus-score">${finale.ergebnis}</span></div>
+                    <div class="focus-info">Wann: ${finale.datum} | Ort: ${finale.spielort}</div>`;
+            
+            slideIds.push("slide-finale"); 
+            slideTitel.push("Match Fokus - Endspiel");
+            
+            // Sichtbarkeit steuern
             document.getElementById(slideIds[aktuelleSeite]).classList.add("active");
             document.getElementById("slide-name").innerText = slideTitel[aktuelleSeite];
         }
-    </script>
-</body>
-</html>
+        
+        function wechsleSeite() {
+            if (slideIds.length === 0) return;
+            document.getElementById(slideIds[aktuelleSeite]).classList.remove("active");aktuelleSeite = (aktuelleSeite + 1) % slideIds.length;
+            document.getElementById(slideIds[aktuelleSeite]).classList.add("active");document.getElementById("slide-name").innerText = slideTitel[aktuelleSeite];
+        }
+        
+        // Intervall-Steuerungenasync 
+        function init() {
+            await ladeUndBerechneDaten();
+            setInterval(wechsleSeite, 12000); // Alle 12 Sek umblättern
+            setInterval(ladeUndBerechneDaten, 5000); // Alle 5 Sek frisch aus der Cloud laden (Cache-frei!)
+        }
+        
+        window.onload = init;
